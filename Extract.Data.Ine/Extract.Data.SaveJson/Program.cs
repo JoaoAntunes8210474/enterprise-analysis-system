@@ -6,6 +6,7 @@ using System.IO;
 using Extract.Data.SaveJson.dtos;
 using File = System.IO.File;
 using Extract.Data.SaveJson.models;
+using System.Text.Json.Serialization;
 
 namespace Extract.Data.SaveJson
 {
@@ -13,13 +14,19 @@ namespace Extract.Data.SaveJson
     {
         private const string CompanyUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008511&Dim1=S7A2022&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT,A,B,C,D,E,F,G,H,I,J,L,M,N,P,Q,R,S&lang=PT";
 
-        private const string ServiceUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008512&Dim1=S7A2022,S7A2021&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT&lang=PT";
+        private const string ServiceUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008512&Dim1=S7A2022&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT,A,B,C,D,E,F,G,H,I,J,L,M,N,P,Q,R,S&lang=PT";
 
-        private const string BusinessUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008513&Dim1=S7A2022,S7A2021&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT&lang=PT";
+        private const string BusinessUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008513&Dim1=S7A2022&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT,A,B,C,D,E,F,G,H,I,J,L,M,N,P,Q,R,S&lang=PT";
 
-        private const string ValueUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008514&Dim1=S7A2022&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT&lang=PT";
+        private const string ValueUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008514&Dim1=S7A2022&Dim2=PT,1,11,111,1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610,112,1120301,1120302,1120303,1120306,1120310,1120313,119,1190304,1190307,1190308,1191705,1190309,1190311,1190312,1190314,11A,11B,11C,11C1301,11C1302,11C0106,11C0305,11C1804,11C1303,11C1305,11C1307,11C1309,11C1311,11C1813,11D,11E,16,17,18,15,2,20,3&Dim3=TOT,A,B,C,D,E,F,G,H,I,J,L,M,N,P,Q,R,S&lang=PT";
 
-        private static async Task Main()
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        public static async Task Main()
         {
             await RegisterDataIntoJsonFile();
         }
@@ -43,16 +50,24 @@ namespace Extract.Data.SaveJson
                 IList<ValueData?> valueData = await MakeRequest<ValueData>(ValueUrl);
 
                 if (companyData != null)
-                    WriteDataToFile("../Data/CompanyData.json", companyData);
+                {
+                    WriteDataToFile("./Data/CompanyData.json", companyData);
+                }
 
                 if (serviceData != null)
-                    WriteDataToFile("../Data/ServiceData.json", serviceData);
+                {
+                    WriteDataToFile("./Data/ServiceData.json", serviceData);
+                }
 
                 if (businessData != null)
-                    WriteDataToFile("../Data/BusinessData.json", businessData);
+                {
+                    WriteDataToFile("./Data/BusinessData.json", businessData);
+                }
 
                 if (valueData != null)
-                    WriteDataToFile("../Data/ValueData.json", valueData);
+                {
+                    WriteDataToFile("./Data/ValueData.json", valueData);
+                }
             }
             catch (Exception)
             {
@@ -133,7 +148,17 @@ namespace Extract.Data.SaveJson
                 return true;
             }
 
-            var responseData = JsonSerializer.Deserialize<ResponseDto>(jsonData) ?? new ResponseDto();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true, // To handle JSON property casing mismatch
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var responseDataList = JsonSerializer.Deserialize<IList<ResponseDto>>(jsonData, options) ?? [];
+
+            // Get the first index of the list and store it in responseData
+            var responseData = responseDataList.Count > 0 ? responseDataList[0] : new ResponseDto();
 
             if (responseData.Dados == null || responseData.Dados.Count == 0)
             {
@@ -165,7 +190,6 @@ namespace Extract.Data.SaveJson
                     }
 
                     responseDeserializedData.Add(deserializedData);
-                    return true;
                 }
             }
 
@@ -186,11 +210,6 @@ namespace Extract.Data.SaveJson
         /// </returns>
         private static bool IsEntityInformationValid<T>(DataDto? dataValue, out string errorMessage, out T? deserializedData)
         {
-            // If <typeparamref name="T"/> is CompanyData, deserialize into CompanyData
-            // If <typeparamref name="T"/> is ServiceData, deserialize into ServiceData
-            // If <typeparamref name="T"/> is BusinessData, deserialize into BusinessData
-            // If <typeparamref name="T"/> is ValueData, deserialize into ValueData
-            // Otherwise, return false
             if (dataValue == null)
             {
                 errorMessage = "Request made had missing data >>> Data value was null";
@@ -198,14 +217,11 @@ namespace Extract.Data.SaveJson
                 return true;
             }
 
-            deserializedData = default;
+            errorMessage = string.Empty;
 
-            if (deserializedData is CompanyData)
+            if (typeof(T) == typeof(CompanyData))
             {
-                // Validate each property of the CompanyData object
-                errorMessage = string.Empty;
-
-                CompanyData companyData = new()
+                var companyData = new CompanyData
                 {
                     NumberOfCompanies = dataValue.valor,
                     EconomicActivityCode = dataValue.dim_3,
@@ -214,15 +230,20 @@ namespace Extract.Data.SaveJson
                     GeographicAreaDescription = dataValue.geodsg,
                     LegalFormCode = dataValue.dim_4,
                     LegalFormDescription = dataValue.dim_4_t,
+                    ConvSignal = dataValue.sinal_conv,
+                    ConvSignalDescription = dataValue.sinal_conv_desc
                 };
 
-                if (string.IsNullOrEmpty(companyData.NumberOfCompanies) ||
-                    string.IsNullOrEmpty(companyData.EconomicActivityCode) ||
-                    string.IsNullOrEmpty(companyData.EconomicActivityDescription) ||
-                    string.IsNullOrEmpty(companyData.GeographicAreaCode) ||
-                    string.IsNullOrEmpty(companyData.GeographicAreaDescription) ||
-                    string.IsNullOrEmpty(companyData.LegalFormCode) ||
-                    string.IsNullOrEmpty(companyData.LegalFormDescription))
+                bool areMandatoryFieldsValid = !string.IsNullOrEmpty(companyData.EconomicActivityCode) &&
+                                               !string.IsNullOrEmpty(companyData.EconomicActivityDescription) &&
+                                               !string.IsNullOrEmpty(companyData.GeographicAreaCode) &&
+                                               !string.IsNullOrEmpty(companyData.GeographicAreaDescription);
+
+                bool areDependentFieldsValid = !string.IsNullOrEmpty(companyData.NumberOfCompanies) ||
+                                               (!string.IsNullOrEmpty(companyData.ConvSignal) &&
+                                                !string.IsNullOrEmpty(companyData.ConvSignalDescription));
+
+                if (!areMandatoryFieldsValid || !areDependentFieldsValid)
                 {
                     errorMessage = "Request made had missing data >>> Could not deserialize to CompanyData >>> Missing data in values";
                     deserializedData = default;
@@ -230,15 +251,11 @@ namespace Extract.Data.SaveJson
                 }
 
                 deserializedData = (T)(object)companyData;
-
                 return true;
             }
-            else if (deserializedData is ServiceData)
+            else if (typeof(T) == typeof(ServiceData))
             {
-                // Validate each property of the ServiceData object
-                errorMessage = string.Empty;
-
-                ServiceData serviceData = new()
+                var serviceData = new ServiceData
                 {
                     NumberOfPeopleWorkingForCompanies = dataValue.valor,
                     EconomicActivityCode = dataValue.dim_3,
@@ -246,16 +263,19 @@ namespace Extract.Data.SaveJson
                     GeographicAreaCode = dataValue.geocod,
                     GeographicAreaDescription = dataValue.geodsg,
                     ConvSignal = dataValue.sinal_conv,
-                    ConvSignalDescription = dataValue.sinal_conv_desc,
+                    ConvSignalDescription = dataValue.sinal_conv_desc
                 };
 
-                if (string.IsNullOrEmpty(serviceData.NumberOfPeopleWorkingForCompanies) ||
-                    string.IsNullOrEmpty(serviceData.EconomicActivityCode) ||
-                    string.IsNullOrEmpty(serviceData.EconomicActivityDescription) ||
-                    string.IsNullOrEmpty(serviceData.GeographicAreaCode) ||
-                    string.IsNullOrEmpty(serviceData.GeographicAreaDescription) ||
-                    string.IsNullOrEmpty(serviceData.ConvSignal) ||
-                    string.IsNullOrEmpty(serviceData.ConvSignalDescription))
+                bool areMandatoryFieldsValid = !string.IsNullOrEmpty(serviceData.EconomicActivityCode) &&
+                                               !string.IsNullOrEmpty(serviceData.EconomicActivityDescription) &&
+                                               !string.IsNullOrEmpty(serviceData.GeographicAreaCode) &&
+                                               !string.IsNullOrEmpty(serviceData.GeographicAreaDescription);
+
+                bool areDependentFieldsValid = !string.IsNullOrEmpty(serviceData.NumberOfPeopleWorkingForCompanies) ||
+                                               (!string.IsNullOrEmpty(serviceData.ConvSignal) &&
+                                                !string.IsNullOrEmpty(serviceData.ConvSignalDescription));
+
+                if (!areMandatoryFieldsValid || !areDependentFieldsValid)
                 {
                     errorMessage = "Request made had missing data >>> Could not deserialize to ServiceData >>> Missing data in values";
                     deserializedData = default;
@@ -263,28 +283,31 @@ namespace Extract.Data.SaveJson
                 }
 
                 deserializedData = (T)(object)serviceData;
-
                 return true;
             }
-            else if (deserializedData is BusinessData)
+            else if (typeof(T) == typeof(BusinessData))
             {
-                // Validate each property of the BusinessData object
-                errorMessage = string.Empty;
-
-                BusinessData businessData = new()
+                var businessData = new BusinessData
                 {
                     NumberOfVolumeOfBusinessForCompanies = dataValue.valor,
                     EconomicActivityCode = dataValue.dim_3,
                     EconomicActivityDescription = dataValue.dim_3_t,
                     GeographicAreaCode = dataValue.geocod,
                     GeographicAreaDescription = dataValue.geodsg,
+                    ConvSignal = dataValue.sinal_conv,
+                    ConvSignalDescription = dataValue.sinal_conv_desc
                 };
 
-                if (string.IsNullOrEmpty(businessData.NumberOfVolumeOfBusinessForCompanies) ||
-                    string.IsNullOrEmpty(businessData.EconomicActivityCode) ||
-                    string.IsNullOrEmpty(businessData.EconomicActivityDescription) ||
-                    string.IsNullOrEmpty(businessData.GeographicAreaCode) ||
-                    string.IsNullOrEmpty(businessData.GeographicAreaDescription))
+                bool areMandatoryFieldsValid = !string.IsNullOrEmpty(businessData.EconomicActivityCode) &&
+                                               !string.IsNullOrEmpty(businessData.EconomicActivityDescription) &&
+                                               !string.IsNullOrEmpty(businessData.GeographicAreaCode) &&
+                                               !string.IsNullOrEmpty(businessData.GeographicAreaDescription);
+
+                bool areDependentFieldsValid = !string.IsNullOrEmpty(businessData.NumberOfVolumeOfBusinessForCompanies) ||
+                                               (!string.IsNullOrEmpty(businessData.ConvSignal) &&
+                                                !string.IsNullOrEmpty(businessData.ConvSignalDescription));
+
+                if (!areMandatoryFieldsValid || !areDependentFieldsValid)
                 {
                     errorMessage = "Request made had missing data >>> Could not deserialize to BusinessData >>> Missing data in values";
                     deserializedData = default;
@@ -292,25 +315,38 @@ namespace Extract.Data.SaveJson
                 }
 
                 deserializedData = (T)(object)businessData;
-
                 return true;
             }
-            else if (deserializedData is ValueData)
+            else if (typeof(T) == typeof(ValueData))
             {
-                // Validate each property of the ValueData object
-                errorMessage = string.Empty;
-
-                ValueData valueData = new()
+                var valueData = new ValueData
                 {
                     IncreasedValueForCompanies = dataValue.valor,
                     EconomicActivityCode = dataValue.dim_3,
                     EconomicActivityDescription = dataValue.dim_3_t,
                     GeographicAreaCode = dataValue.geocod,
                     GeographicAreaDescription = dataValue.geodsg,
+                    ConvSignal = dataValue.sinal_conv,
+                    ConvSignalDescription = dataValue.sinal_conv_desc
                 };
 
-                deserializedData = (T)(object)valueData;
+                bool areMandatoryFieldsValid = !string.IsNullOrEmpty(valueData.EconomicActivityCode) &&
+                                               !string.IsNullOrEmpty(valueData.EconomicActivityDescription) &&
+                                               !string.IsNullOrEmpty(valueData.GeographicAreaCode) &&
+                                               !string.IsNullOrEmpty(valueData.GeographicAreaDescription);
 
+                bool areDependentFieldsValid = !string.IsNullOrEmpty(valueData.IncreasedValueForCompanies) ||
+                                               (!string.IsNullOrEmpty(valueData.ConvSignal) &&
+                                                !string.IsNullOrEmpty(valueData.ConvSignalDescription));
+
+                if (!areMandatoryFieldsValid || !areDependentFieldsValid)
+                {
+                    errorMessage = "Request made had missing data >>> Could not deserialize to ValueData >>> Missing data in values";
+                    deserializedData = default;
+                    return false;
+                }
+
+                deserializedData = (T)(object)valueData;
                 return true;
             }
 
@@ -327,14 +363,38 @@ namespace Extract.Data.SaveJson
         /// <param name="data">The data to be written to the file</param>
         private static void WriteDataToFile<T>(string fileName, T data)
         {
-            var json = JsonSerializer.Serialize(data);
-
-            if (!File.Exists(fileName))
+            try
             {
-                File.Create(fileName).Dispose();
-            }
+                var json = JsonSerializer.Serialize(data, JsonSerializerOptions);
 
-            File.WriteAllText(fileName, json);
+                LogInformation($"Writing data to file: {fileName}");
+
+                // Construct the path to the Data folder in the solution directory
+                var directory = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory()));
+
+                while (directory != null && !directory.GetFiles("*.sln").Any())
+                {
+                    directory = directory.Parent;
+                }
+
+                if (directory == null || directory.GetFiles("*.sln").Length == 0)
+                {
+                    directory = new DirectoryInfo(
+                        Path.Combine(Directory.GetCurrentDirectory()));
+                }
+
+                // Combine the data directory path with the file name
+                string fullPath = Path.Combine(directory.FullName, fileName);
+
+                // Write the JSON data to the file
+                File.WriteAllText(fullPath, json);
+
+                LogInformation($"Data written to file: {fullPath}");
+            }
+            catch (Exception ex)
+            {
+                LogError($"An error occurred while writing data to file: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -344,6 +404,16 @@ namespace Extract.Data.SaveJson
         private static void LogError(string message)
         {
             var logMessage = $"[{DateTime.Now:dd-MM-yyyy HH:mm:ss}] Fetching Data did not work on step: {message}";
+            Console.WriteLine(logMessage);
+        }
+
+        /// <summary>
+        /// Log information message
+        /// </summary>
+        /// <param name="message">The message to be logged into the console when this method is called</param>
+        private static void LogInformation(string message)
+        {
+            var logMessage = $"[{DateTime.Now:dd-MM-yyyy HH:mm:ss}] {message}";
             Console.WriteLine(logMessage);
         }
     }

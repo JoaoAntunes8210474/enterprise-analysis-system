@@ -1,7 +1,14 @@
-﻿namespace Extract.Data.SaveJson.models
+﻿using System.Text.Json;
+
+namespace Extract.Data.SaveJson.models
 {
     public class ServiceData
     {
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+        {
+            WriteIndented = true
+        };
+
         public string? NumberOfPeopleWorkingForCompanies { get; set; } = null!;
 
         public string? EconomicActivityCode { get; set; } = null!;
@@ -15,5 +22,10 @@
         public string? ConvSignal { get; set; } = null!;
 
         public string? ConvSignalDescription { get; set; } = null!;
+
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this, JsonSerializerOptions);
+        }
     }
 }

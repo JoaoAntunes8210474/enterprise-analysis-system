@@ -2,10 +2,10 @@
 {
     public class ErrorMessageDto
     {
-        public string IndicadorCod { get; set; } = "";
-        public string Lingua { get; set; } = "";
-        public DateTime DataExtracao { get; set; } = DateTime.Now;
-        public string Msg { get; set; } = "";
-        public string Cod { get; set; } = "";
+        public string? IndicadorCod { get; set; } = "";
+        public string? Lingua { get; set; } = "";
+        public string? DataExtracao { get; set; } = "";
+        public string? Msg { get; set; } = "";
+        public string? Cod { get; set; } = "";
     }
 }
