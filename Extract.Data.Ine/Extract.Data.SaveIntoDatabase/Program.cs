@@ -53,8 +53,6 @@ namespace Extract.Data.SaveIntoDatabase
             _businessTable.Columns.Add("EconomicActivityDescription", typeof(string));
             _businessTable.Columns.Add("GeographicAreaCode", typeof(string));
             _businessTable.Columns.Add("GeographicAreaDescription", typeof(string));
-            _businessTable.Columns.Add("LegalFormCode", typeof(int));
-            _businessTable.Columns.Add("LegalFormDescription", typeof(string));
             _businessTable.Columns.Add("ConvSignal", typeof(string));
             _businessTable.Columns.Add("ConvSignalDescription", typeof(string));
 
@@ -65,8 +63,6 @@ namespace Extract.Data.SaveIntoDatabase
             _serviceTable.Columns.Add("EconomicActivityDescription", typeof(string));
             _serviceTable.Columns.Add("GeographicAreaCode", typeof(string));
             _serviceTable.Columns.Add("GeographicAreaDescription", typeof(string));
-            _serviceTable.Columns.Add("LegalFormCode", typeof(int));
-            _serviceTable.Columns.Add("LegalFormDescription", typeof(string));
             _serviceTable.Columns.Add("ConvSignal", typeof(string));
             _serviceTable.Columns.Add("ConvSignalDescription", typeof(string));
 
@@ -77,8 +73,6 @@ namespace Extract.Data.SaveIntoDatabase
             _valueTable.Columns.Add("EconomicActivityDescription", typeof(string));
             _valueTable.Columns.Add("GeographicAreaCode", typeof(string));
             _valueTable.Columns.Add("GeographicAreaDescription", typeof(string));
-            _valueTable.Columns.Add("LegalFormCode", typeof(int));
-            _valueTable.Columns.Add("LegalFormDescription", typeof(string));
             _valueTable.Columns.Add("ConvSignal", typeof(string));
             _valueTable.Columns.Add("ConvSignalDescription", typeof(string));
         }
@@ -233,8 +227,6 @@ namespace Extract.Data.SaveIntoDatabase
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
                             row["GeographicAreaDescription"] = data.GeographicAreaDescription;
-                            row["LegalFormCode"] = int.Parse(data.LegalFormCode);
-                            row["LegalFormDescription"] = data.LegalFormDescription;
                             row["ConvSignal"] = data.ConvSignal;
                             row["ConvSignalDescription"] = data.ConvSignalDescription;
                             _businessTable.Rows.Add(row);
@@ -247,8 +239,6 @@ namespace Extract.Data.SaveIntoDatabase
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
                             row["GeographicAreaDescription"] = data.GeographicAreaDescription;
-                            row["LegalFormCode"] = int.Parse(data.LegalFormCode);
-                            row["LegalFormDescription"] = data.LegalFormDescription;
                             row["ConvSignal"] = data.ConvSignal;
                             row["ConvSignalDescription"] = data.ConvSignalDescription;
                             _serviceTable.Rows.Add(row);
@@ -261,8 +251,6 @@ namespace Extract.Data.SaveIntoDatabase
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
                             row["GeographicAreaDescription"] = data.GeographicAreaDescription;
-                            row["LegalFormCode"] = int.Parse(data.LegalFormCode);
-                            row["LegalFormDescription"] = data.LegalFormDescription;
                             row["ConvSignal"] = data.ConvSignal;
                             row["ConvSignalDescription"] = data.ConvSignalDescription;
                             _valueTable.Rows.Add(row);
@@ -277,15 +265,21 @@ namespace Extract.Data.SaveIntoDatabase
         /// </summary>
         private static void InsertDataIntoDatabase()
         {
-            string connectionString = "YourConnectionStringHere";
+            SqlConnectionStringBuilder connectionStringBuilder = new()
+            {
+                DataSource = "localhost",
+                InitialCatalog = "eas",
+                IntegratedSecurity = true,
+                TrustServerCertificate = true
+            };
 
-            using SqlConnection connection = new(connectionString);
+            using SqlConnection connection = new(connectionStringBuilder.ConnectionString);
             connection.Open();
 
             using SqlTransaction transaction = connection.BeginTransaction();
             try
             {
-                MergeDataTableIntoDatabase(connection, transaction, _companyTable, "CompanyTable");
+                MergeDataTableIntoDatabase(connection, transaction, _companyTable, "CompanyTable", true);
                 MergeDataTableIntoDatabase(connection, transaction, _businessTable, "BusinessTable");
                 MergeDataTableIntoDatabase(connection, transaction, _serviceTable, "ServiceTable");
                 MergeDataTableIntoDatabase(connection, transaction, _valueTable, "ValueTable");
@@ -306,13 +300,49 @@ namespace Extract.Data.SaveIntoDatabase
         /// <param name="transaction">The transaction to be used so that any errors can be rolled back</param>
         /// <param name="dataTable">The current DataTable that is being used to save the data into the database</param>
         /// <param name="tableName">The name of the table in the database where the data will be saved</param>
-        private static void MergeDataTableIntoDatabase(SqlConnection connection, SqlTransaction transaction, DataTable dataTable, string tableName)
+        private static void MergeDataTableIntoDatabase(SqlConnection connection, SqlTransaction transaction, DataTable dataTable, string tableName, bool hasLegalForm = false)
         {
-            foreach (DataRow row in dataTable.Rows)
+            if (!hasLegalForm)
             {
-                string mergeSql = $@"
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    string mergeSql = $@"
                     MERGE INTO {tableName} AS target
-                    USING (VALUES (@Year, @NumberOfCompanies, @EconomicActivityCode, @EconomicActivityDescription, @GeographicAreaCode, @GeographicAreaDescription, @LegalFormCode, @LegalFormDescription, @ConvSignal, @ConvSignalDescription)) AS source
+                    USING (VALUES (@Year, @NumberOfCompanies, @EconomicActivityCode, @EconomicActivityDescription, @GeographicAreaCode, @GeographicAreaDescription, @ConvSignal, @ConvSignalDescription)) AS source
+                    (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
+                    ON target.Year = source.Year AND target.EconomicActivityCode = source.EconomicActivityCode AND target.GeographicAreaCode = source.GeographicAreaCode
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            NumberOfCompanies = source.NumberOfCompanies,
+                            EconomicActivityDescription = source.EconomicActivityDescription,
+                            GeographicAreaDescription = source.GeographicAreaDescription,
+                            ConvSignal = source.ConvSignal,
+                            ConvSignalDescription = source.ConvSignalDescription
+                    WHEN NOT MATCHED THEN
+                        INSERT (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
+                        VALUES (source.Year, source.NumberOfCompanies, source.EconomicActivityCode, source.EconomicActivityDescription, source.GeographicAreaCode, source.GeographicAreaDescription, source.ConvSignal, source.ConvSignalDescription);";
+
+                    using SqlCommand command = new(mergeSql, connection, transaction);
+
+                    command.Parameters.AddWithValue("@Year", row["Year"]);
+                    command.Parameters.AddWithValue("@NumberOfCompanies", row["NumberOfCompanies"]);
+                    command.Parameters.AddWithValue("@EconomicActivityCode", row["EconomicActivityCode"]);
+                    command.Parameters.AddWithValue("@EconomicActivityDescription", row["EconomicActivityDescription"]);
+                    command.Parameters.AddWithValue("@GeographicAreaCode", row["GeographicAreaCode"]);
+                    command.Parameters.AddWithValue("@GeographicAreaDescription", row["GeographicAreaDescription"]);
+                    command.Parameters.AddWithValue("@ConvSignal", row["ConvSignal"]);
+                    command.Parameters.AddWithValue("@ConvSignalDescription", row["ConvSignalDescription"]);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+            else
+            {
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    string mergeSql = $@"
+                    MERGE INTO {tableName} AS target
+                    USING (VALUES (@Year, @NumberOfCompanies, @EconomicActivityCode, @EconomicActivityDescription, @GeographicAreaCode, @GeographicAreaDescription, @LegalFormCode, @LegalFormDescription @ConvSignal, @ConvSignalDescription)) AS source
                     (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, LegalFormCode, LegalFormDescription, ConvSignal, ConvSignalDescription)
                     ON target.Year = source.Year AND target.EconomicActivityCode = source.EconomicActivityCode AND target.GeographicAreaCode = source.GeographicAreaCode AND target.LegalFormCode = source.LegalFormCode
                     WHEN MATCHED THEN
@@ -328,20 +358,21 @@ namespace Extract.Data.SaveIntoDatabase
                         INSERT (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, LegalFormCode, LegalFormDescription, ConvSignal, ConvSignalDescription)
                         VALUES (source.Year, source.NumberOfCompanies, source.EconomicActivityCode, source.EconomicActivityDescription, source.GeographicAreaCode, source.GeographicAreaDescription, source.LegalFormCode, source.LegalFormDescription, source.ConvSignal, source.ConvSignalDescription);";
 
-                using SqlCommand command = new(mergeSql, connection, transaction);
+                    using SqlCommand command = new(mergeSql, connection, transaction);
 
-                command.Parameters.AddWithValue("@Year", row["Year"]);
-                command.Parameters.AddWithValue("@NumberOfCompanies", row["NumberOfCompanies"]);
-                command.Parameters.AddWithValue("@EconomicActivityCode", row["EconomicActivityCode"]);
-                command.Parameters.AddWithValue("@EconomicActivityDescription", row["EconomicActivityDescription"]);
-                command.Parameters.AddWithValue("@GeographicAreaCode", row["GeographicAreaCode"]);
-                command.Parameters.AddWithValue("@GeographicAreaDescription", row["GeographicAreaDescription"]);
-                command.Parameters.AddWithValue("@LegalFormCode", row["LegalFormCode"]);
-                command.Parameters.AddWithValue("@LegalFormDescription", row["LegalFormDescription"]);
-                command.Parameters.AddWithValue("@ConvSignal", row["ConvSignal"]);
-                command.Parameters.AddWithValue("@ConvSignalDescription", row["ConvSignalDescription"]);
+                    command.Parameters.AddWithValue("@Year", row["Year"]);
+                    command.Parameters.AddWithValue("@NumberOfCompanies", row["NumberOfCompanies"]);
+                    command.Parameters.AddWithValue("@EconomicActivityCode", row["EconomicActivityCode"]);
+                    command.Parameters.AddWithValue("@EconomicActivityDescription", row["EconomicActivityDescription"]);
+                    command.Parameters.AddWithValue("@GeographicAreaCode", row["GeographicAreaCode"]);
+                    command.Parameters.AddWithValue("@GeographicAreaDescription", row["GeographicAreaDescription"]);
+                    command.Parameters.AddWithValue("@LegalFormCode", row["LegalFormCode"]);
+                    command.Parameters.AddWithValue("@LegalFormDescription", row["LegalFormDescription"]);
+                    command.Parameters.AddWithValue("@ConvSignal", row["ConvSignal"]);
+                    command.Parameters.AddWithValue("@ConvSignalDescription", row["ConvSignalDescription"]);
 
-                command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
+                }
             }
         }
     }

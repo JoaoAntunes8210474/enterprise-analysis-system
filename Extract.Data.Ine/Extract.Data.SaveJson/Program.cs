@@ -12,7 +12,7 @@ namespace Extract.Data.SaveJson
 {
     public static class Program
     {
-        private const string DataPath = "./Data/";
+        private const string DataPath = "\\Data\\";
 
         private const string CompanyUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008511&Dim1=S7A2022&Dim2=";
 
@@ -22,7 +22,9 @@ namespace Extract.Data.SaveJson
 
         private const string ValueUrl = "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008514&Dim1=S7A2022&Dim2=";
 
-        private static Dictionary<string, string> _Dim2Mapping = new Dictionary<string, string>
+        private const string _Dim3 = "01,02,03,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,35,36,37,38,39,41,42,43,45,46,47,49,50,51,52,53,55,56,58,59,60,61,62,63,68,69,70,71,72,73,74,75,77,78,79,80,81,82,85,86,87,88,90,91,92,93,94,95,96";
+
+        private static readonly Dictionary<string, string> _Dim2Mapping = new()
         {
             { "AltoMinho", "1111601,1111602,1111603,1111604,1111605,1111606,1111607,1111608,1111609,1111610" },
             { "Cavado", "1120301,1120302,1120303,1120306,1120310,1120313" },
@@ -41,20 +43,14 @@ namespace Extract.Data.SaveJson
             { "MedioTejo", "16I1401,16I1402,16I1408,16I1410,16I1411,16I1413,16I1421,16I1417,16I0509,16I1418,16I1419,16I0510,16I1420" },
             { "SerraEstrela", "16J0902,16J0501,16J0903,16J0503,16J0904,16J0905,16J0504,16J0906,16J0907,16J0908,16J0909,16J0910,16J0911,16J0912,16J0913" },
             { "AreaMetropolitanaLisboa", "1701502,1701503,1701115,1701504,1701105,1701106,1701107,1701109,1701506,1701507,1701116,1701110,1701508,1701510,1701511,1701512,1701111,1701114" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
-            { "", "" },
+            { "AlentejoLitoral", "1811501,1811505,1810211,1811509,1811513" },
+            { "BaixoAlentejo", "1840201,1840202,1840203,1840204,1840205,1840206,1840207,1840208,1840209,1840210,1840212,1840213,1840214" },
+            { "LeziriaTejo", "1851403,1851404,1851103,1851405,1851406,1851407,1851409,1851412,1851414,1851415,1851416" },
+            { "AltoAlentejo", "1861201,1861202,1861203,1861204,1861205,1861206,1861207,1861208,1861209,1861210,1861211,1861212,1861213,1861214,1861215" },
+            { "AlentejoCentral", "1870701,1870702,1870703,1870704,1870705,1870706,1870707,1870708,1870709,1870710,1870711,1870712,1870713,1870714" },
+            { "Algarve", "1500801,1500802,1500803,1500804,1500805,1500806,1500807,1500808,1500809,1500810,1500811,1500812,1500813,1500814,1500815,1500816" },
+            { "Acores", "2004301,2004501,2004901,2004701,2004201,2004801,2004601,2004602,2004202,2004203,2004204,2004205,2004401,2004802,2004603,2004502,2004302,2004101,2004206" },
+            { "Madeira", "3003101,3003102,3003103,3003104,3003105,3003106,3003201,3003107,3003108,3003109,3003110" }
         };
 
         private static readonly JsonSerializerOptions JsonSerializerOptions = new()
@@ -65,7 +61,7 @@ namespace Extract.Data.SaveJson
 
         public static async Task Main(string[] args)
         {
-            if (ValidateArgument(args, out int year))
+            if (!ValidateArgument(args, out int year))
             {
                 throw new ArgumentException("Invalid argument - Expected: <year>, example: 2022");
             }
@@ -78,7 +74,11 @@ namespace Extract.Data.SaveJson
         /// </summary>
         /// <param name="args">The argument passed to the program</param>
         /// <param name="year">The year to be validated</param>
-        /// <returns>The validity of the argument and the parsed year into an integer</returns>
+        /// <returns>
+        ///     The validity of the argument and the parsed year into an integer
+        ///     If the argument is invalid, return false and 0
+        ///     Else, return true and the parsed year
+        /// </returns>
         private static bool ValidateArgument(string[] args, out int year)
         {
             if (args.Length != 1 || !int.TryParse(args[0], out year))
@@ -103,10 +103,14 @@ namespace Extract.Data.SaveJson
         {
             try
             {
-                IList<CompanyData?> companyData = await MakeRequest<CompanyData>(CompanyUrl);
+                LogInformation("Fetching data from the URLs");
+
+                /**IList<CompanyData?> companyData = await MakeRequest<CompanyData>(CompanyUrl);
                 IList<ServiceData?> serviceData = await MakeRequest<ServiceData>(ServiceUrl);
                 IList<BusinessData?> businessData = await MakeRequest<BusinessData>(BusinessUrl);
                 IList<ValueData?> valueData = await MakeRequest<ValueData>(ValueUrl);
+
+                LogInformation("Writing data to files");
 
                 if (companyData != null)
                 {
@@ -126,7 +130,45 @@ namespace Extract.Data.SaveJson
                 if (valueData != null)
                 {
                     WriteDataToFile("/ValueData.json", valueData, year);
+                }*/
+
+                var companyDataTask = MakeRequest<CompanyData>(CompanyUrl);
+                var serviceDataTask = MakeRequest<ServiceData>(ServiceUrl);
+                var businessDataTask = MakeRequest<BusinessData>(BusinessUrl);
+                var valueDataTask = MakeRequest<ValueData>(ValueUrl);
+
+                await Task.WhenAll(companyDataTask, serviceDataTask, businessDataTask, valueDataTask);
+
+                IList<CompanyData?> companyData = await companyDataTask;
+                IList<ServiceData?> serviceData = await serviceDataTask;
+                IList<BusinessData?> businessData = await businessDataTask;
+                IList<ValueData?> valueData = await valueDataTask;
+
+                var tasks = new List<Task>();
+
+                LogInformation("Writing data to files");
+
+                if (companyData != null)
+                {
+                    tasks.Add(Task.Run(() => WriteDataToFile("\\CompanyData.json", companyData, year)));
                 }
+
+                if (serviceData != null)
+                {
+                    tasks.Add(Task.Run(() => WriteDataToFile("\\ServiceData.json", serviceData, year)));
+                }
+
+                if (businessData != null)
+                {
+                    tasks.Add(Task.Run(() => WriteDataToFile("\\BusinessData.json", businessData, year)));
+                }
+
+                if (valueData != null)
+                {
+                    tasks.Add(Task.Run(() => WriteDataToFile("\\ValueData.json", valueData, year)));
+                }
+
+                await Task.WhenAll(tasks);
             }
             catch (Exception)
             {
@@ -146,6 +188,8 @@ namespace Extract.Data.SaveJson
         {
             try
             {
+                LogInformation($"Fetching data from URL for the data type: {typeof(T).Name}");
+
                 var data = await FetchData<T>(url);
 
                 return data;
@@ -157,32 +201,67 @@ namespace Extract.Data.SaveJson
             }
         }
 
-        /// <summary>
-        /// Fetch data from a given URL
-        /// </summary>
-        /// <typeparam name="T">The type of data to be fetched</typeparam>
-        /// <param name="url">The URL to fetch the data from</param>
-        /// <returns>The fetched data</returns>
-        /// <exception cref="HttpRequestException">When the request does not return 200</exception>
-        /// <exception cref="InvalidDataException">When the request has missing data</exception>
         private static async Task<IList<T?>> FetchData<T>(string url)
         {
-            using HttpClient httpClient = new();
-            var response = await httpClient.GetAsync(url);
+            IList<T?> allData = [];
+            var tasks = new List<Task>();
 
-            if (!response.IsSuccessStatusCode)
+            // Split the dictionary into chunks of 5
+            var chunks = _Dim2Mapping
+                .Select((entry, index) => new { entry, index })
+                .GroupBy(x => x.index / 5)
+                .Select(g => g.Select(x => x.entry).ToList())
+                .ToList();
+
+            foreach (var chunk in chunks)
             {
-                throw new HttpRequestException("Request did not return 200");
+                tasks.Add(Task.Run(async () =>
+                {
+                    using HttpClient httpClient = new();
+
+                    foreach (var mapping in chunk)
+                    {
+                        string modifiedUrl = $"{url}{mapping.Value}&Dim3={_Dim3}&lang=PT";
+
+                        var response = await httpClient.GetAsync(modifiedUrl);
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            throw new HttpRequestException("Request did not return 200");
+                        }
+
+                        dynamic? jsonData = await response.Content.ReadAsStringAsync();
+
+                        if (IsDataInvalid(jsonData, out string errorMessage, out IList<T?> deserializedData))
+                        {
+                            throw new InvalidDataException(errorMessage);
+                        }
+
+                        lock (allData)
+                        {
+                            foreach (var data in deserializedData)
+                            {
+                                bool isCompanyDataWithTotalLegalCode = data is CompanyData companyData && companyData.LegalFormCode == "T";
+
+                                if (isCompanyDataWithTotalLegalCode)
+                                {
+                                    continue; // Skip this entry
+                                }
+
+                                allData.Add(data);
+                            }
+                        }
+                    }
+
+                    LogInformation($"Finished fetching data from URL for the data type: {typeof(T).Name}");
+                }));
             }
 
-            dynamic? jsonData = await response.Content.ReadAsStringAsync();
+            await Task.WhenAll(tasks);
 
-            if (IsDataInvalid(jsonData, out string errorMessage, out IList<T?> deserializedData))
-            {
-                throw new InvalidDataException(errorMessage);
-            }
+            LogInformation($"Finished fetching data from URL for the data type: {typeof(T).Name}");
 
-            return deserializedData;
+            return allData;
         }
 
         /// <summary>
@@ -426,8 +505,6 @@ namespace Extract.Data.SaveJson
             {
                 var json = JsonSerializer.Serialize(data, JsonSerializerOptions);
 
-                LogInformation($"Writing data to file: {fileName}");
-
                 // Construct the path to the Data folder in the solution directory
                 var directory = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory()));
 
@@ -443,12 +520,13 @@ namespace Extract.Data.SaveJson
                 }
 
                 // Combine the data directory path with the file name
-                string yearPath = Path.Combine(directory.FullName, DataPath, year.ToString());
-                string fullPath = Path.Combine(yearPath, fileName);
+                string dataPath = $"{directory.FullName}{DataPath}";
+                string yearPath = $"{dataPath}{year}";
+                string fullPath = $"{yearPath}{fileName}";
 
-                if (!Directory.Exists(directory.FullName))
+                if (!Directory.Exists(dataPath))
                 {
-                    Directory.CreateDirectory(directory.FullName);
+                    Directory.CreateDirectory(dataPath);
                 }
 
                 if (!Directory.Exists(yearPath))
