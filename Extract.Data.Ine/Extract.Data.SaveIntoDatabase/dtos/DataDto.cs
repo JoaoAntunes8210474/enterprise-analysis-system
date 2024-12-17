@@ -10,19 +10,18 @@ namespace Extract.Data.SaveJson.dtos
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        public string FileName { get; set; }
-        public string NumberOfCompanies { get; set; }
-        public string EconomicActivityCode { get; set; }
-        public string EconomicActivityDescription { get; set; }
-        public string GeographicAreaCode { get; set; }
-        public string GeographicAreaDescription { get; set; }
-        public string LegalFormCode { get; set; }
-        public string LegalFormDescription { get; set; }
-        public string ConvSignal { get; set; }
-        public string ConvSignalDescription { get; set; }
-        public string NumberOfVolumeOfBusinessForCompanies { get; set; }
-        public string NumberOfPeopleWorkingForCompanies { get; set; }
-        public string IncreasedValueForCompanies { get; set; }
+        public string? NumberOfCompanies { get; set; } = null;
+        public string EconomicActivityCode { get; set; } = null!;
+        public string EconomicActivityDescription { get; set; } = null!;
+        public string GeographicAreaCode { get; set; } = null!;
+        public string GeographicAreaDescription { get; set; } = null!;
+        public string? LegalFormCode { get; set; } = null;
+        public string? LegalFormDescription { get; set; } = null;
+        public string? ConvSignal { get; set; } = null;
+        public string? ConvSignalDescription { get; set; } = null;
+        public string? NumberOfVolumeOfBusinessForCompanies { get; set; } = null;
+        public string? NumberOfPeopleWorkingForCompanies { get; set; } = null;
+        public string? IncreasedValueForCompanies { get; set; } = null;
 
         public override string ToString()
         {

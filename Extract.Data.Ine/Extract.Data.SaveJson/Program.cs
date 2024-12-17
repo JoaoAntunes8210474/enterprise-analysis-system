@@ -105,33 +105,6 @@ namespace Extract.Data.SaveJson
             {
                 LogInformation("Fetching data from the URLs");
 
-                /**IList<CompanyData?> companyData = await MakeRequest<CompanyData>(CompanyUrl);
-                IList<ServiceData?> serviceData = await MakeRequest<ServiceData>(ServiceUrl);
-                IList<BusinessData?> businessData = await MakeRequest<BusinessData>(BusinessUrl);
-                IList<ValueData?> valueData = await MakeRequest<ValueData>(ValueUrl);
-
-                LogInformation("Writing data to files");
-
-                if (companyData != null)
-                {
-                    WriteDataToFile("/CompanyData.json", companyData, year);
-                }
-
-                if (serviceData != null)
-                {
-                    WriteDataToFile("/ServiceData.json", serviceData, year);
-                }
-
-                if (businessData != null)
-                {
-                    WriteDataToFile("/BusinessData.json", businessData, year);
-                }
-
-                if (valueData != null)
-                {
-                    WriteDataToFile("/ValueData.json", valueData, year);
-                }*/
-
                 var companyDataTask = MakeRequest<CompanyData>(CompanyUrl);
                 var serviceDataTask = MakeRequest<ServiceData>(ServiceUrl);
                 var businessDataTask = MakeRequest<BusinessData>(BusinessUrl);
@@ -140,8 +113,11 @@ namespace Extract.Data.SaveJson
                 await Task.WhenAll(companyDataTask, serviceDataTask, businessDataTask, valueDataTask);
 
                 IList<CompanyData?> companyData = await companyDataTask;
+
                 IList<ServiceData?> serviceData = await serviceDataTask;
+
                 IList<BusinessData?> businessData = await businessDataTask;
+
                 IList<ValueData?> valueData = await valueDataTask;
 
                 var tasks = new List<Task>();
@@ -201,6 +177,14 @@ namespace Extract.Data.SaveJson
             }
         }
 
+        /// <summary>
+        /// Fetch data from a given URL
+        /// </summary>
+        /// <typeparam name="T">Type of data to be fetched</typeparam>
+        /// <param name="url">Url to fetch the data from</param>
+        /// <returns>The fetched data</returns>
+        /// <exception cref="HttpRequestException">If the request does not return 200</exception>
+        /// <exception cref="InvalidDataException">If the request has missing data</exception>
         private static async Task<IList<T?>> FetchData<T>(string url)
         {
             IList<T?> allData = [];
@@ -252,8 +236,6 @@ namespace Extract.Data.SaveJson
                             }
                         }
                     }
-
-                    LogInformation($"Finished fetching data from URL for the data type: {typeof(T).Name}");
                 }));
             }
 

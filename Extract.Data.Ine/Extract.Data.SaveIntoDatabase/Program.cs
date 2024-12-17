@@ -12,20 +12,24 @@ namespace Extract.Data.SaveIntoDatabase
         private static DataTable _serviceTable;
         private static DataTable _valueTable;
 
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
+            LogInformation("Starting the program");
+
             if (!ValidateArguments(args, out int biggerYear, out int smallerYear))
             {
                 throw new ArgumentException("Invalid arguments - Expected: <biggerYear> <smallerYear>, example: 2022 2017");
             }
 
+            LogInformation("Creating the data tables");
+
             CreateDataTables();
 
-            // For all the years in between the two years
-            // check for all the json files with data
+            LogInformation("Looping through the JSON files to save the data into the DataTables");
+
             LoopThroughJsonFiles(biggerYear, smallerYear);
 
-            InsertDataIntoDatabase();
+            await InsertDataIntoDatabaseAsync();
         }
 
         /// <summary>
@@ -41,7 +45,7 @@ namespace Extract.Data.SaveIntoDatabase
             _companyTable.Columns.Add("EconomicActivityDescription", typeof(string));
             _companyTable.Columns.Add("GeographicAreaCode", typeof(string));
             _companyTable.Columns.Add("GeographicAreaDescription", typeof(string));
-            _companyTable.Columns.Add("LegalFormCode", typeof(int));
+            _companyTable.Columns.Add("LegalFormCode", typeof(string));
             _companyTable.Columns.Add("LegalFormDescription", typeof(string));
             _companyTable.Columns.Add("ConvSignal", typeof(string));
             _companyTable.Columns.Add("ConvSignalDescription", typeof(string));
@@ -68,7 +72,7 @@ namespace Extract.Data.SaveIntoDatabase
 
             _valueTable = new DataTable();
             _valueTable.Columns.Add("Year", typeof(int));
-            _valueTable.Columns.Add("IncreasedValueForCompanies", typeof(decimal));
+            _valueTable.Columns.Add("IncreasedValueForCompanies", typeof(int));
             _valueTable.Columns.Add("EconomicActivityCode", typeof(string));
             _valueTable.Columns.Add("EconomicActivityDescription", typeof(string));
             _valueTable.Columns.Add("GeographicAreaCode", typeof(string));
@@ -143,7 +147,7 @@ namespace Extract.Data.SaveIntoDatabase
                     // Get the data from the json file
                     string jsonData = GetDataFromJsonFile(jsonFile);
                     // Save the data into the database
-                    SaveDataIntoDataTables(jsonData);
+                    SaveDataIntoDataTables(jsonData, jsonFile, year);
                 }
             }
         }
@@ -156,10 +160,10 @@ namespace Extract.Data.SaveIntoDatabase
         private static string[] GetJsonFilesForYear(int year)
         {
             // Get the current directory
-            DirectoryInfo directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            DirectoryInfo directory = new(Directory.GetCurrentDirectory());
 
             // Traverse up the directory tree until we find the solution directory
-            while (directory != null && !directory.GetFiles("*.sln").Any())
+            while (directory != null && directory.GetFiles("*.sln").Length == 0)
             {
                 directory = directory.Parent!;
             }
@@ -191,12 +195,15 @@ namespace Extract.Data.SaveIntoDatabase
         /// Save the data into the database
         /// </summary>
         /// <param name="jsonData">The data to save into the database</param>
-        private static void SaveDataIntoDataTables(string jsonData)
+        private static void SaveDataIntoDataTables(string jsonData, string jsonFilePath, int year)
         {
             // Deserialize the JSON data into a list of DataDto objects
             var dataList = JsonSerializer.Deserialize<List<DataDto>>(jsonData);
 
             ArgumentNullException.ThrowIfNull(dataList);
+
+            string[] splitJsonFilePath = jsonFilePath.Split('\\');
+            string jsonFileName = splitJsonFilePath[^1];
 
             // Loop through the data and add it to the appropriate data table
             foreach (var data in dataList)
@@ -204,16 +211,17 @@ namespace Extract.Data.SaveIntoDatabase
                 if (data != null)
                 {
                     DataRow row;
-                    switch (data.FileName)
+                    switch (jsonFileName)
                     {
                         case "CompanyData.json":
                             row = _companyTable.NewRow();
-                            row["NumberOfCompanies"] = int.Parse(data.NumberOfCompanies);
+                            row["Year"] = year;
+                            row["NumberOfCompanies"] = int.TryParse(data.NumberOfCompanies, out int numberOfCompanies) ? numberOfCompanies : 0;
                             row["EconomicActivityCode"] = data.EconomicActivityCode;
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
                             row["GeographicAreaDescription"] = data.GeographicAreaDescription;
-                            row["LegalFormCode"] = int.Parse(data.LegalFormCode);
+                            row["LegalFormCode"] = data.LegalFormCode;
                             row["LegalFormDescription"] = data.LegalFormDescription;
                             row["ConvSignal"] = data.ConvSignal;
                             row["ConvSignalDescription"] = data.ConvSignalDescription;
@@ -222,7 +230,8 @@ namespace Extract.Data.SaveIntoDatabase
 
                         case "BusinessData.json":
                             row = _businessTable.NewRow();
-                            row["NumberOfVolumeOfBusinessForCompanies"] = int.Parse(data.NumberOfVolumeOfBusinessForCompanies);
+                            row["Year"] = year;
+                            row["NumberOfVolumeOfBusinessForCompanies"] = int.TryParse(data.NumberOfVolumeOfBusinessForCompanies, out int numberOfVolumeOfBusiness) ? numberOfVolumeOfBusiness : 0;
                             row["EconomicActivityCode"] = data.EconomicActivityCode;
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
@@ -234,7 +243,8 @@ namespace Extract.Data.SaveIntoDatabase
 
                         case "ServiceData.json":
                             row = _serviceTable.NewRow();
-                            row["NumberOfPeopleWorkingForCompanies"] = int.Parse(data.NumberOfPeopleWorkingForCompanies);
+                            row["Year"] = year;
+                            row["NumberOfPeopleWorkingForCompanies"] = int.TryParse(data.NumberOfPeopleWorkingForCompanies, out int numberOfPeopleWorking) ? numberOfPeopleWorking : 0;
                             row["EconomicActivityCode"] = data.EconomicActivityCode;
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
@@ -246,7 +256,8 @@ namespace Extract.Data.SaveIntoDatabase
 
                         case "ValueData.json":
                             row = _valueTable.NewRow();
-                            row["IncreasedValueForCompanies"] = decimal.Parse(data.IncreasedValueForCompanies);
+                            row["Year"] = year;
+                            row["IncreasedValueForCompanies"] = int.TryParse(data.IncreasedValueForCompanies, out int increasedValue) ? increasedValue : 0;
                             row["EconomicActivityCode"] = data.EconomicActivityCode;
                             row["EconomicActivityDescription"] = data.EconomicActivityDescription;
                             row["GeographicAreaCode"] = data.GeographicAreaCode;
@@ -263,7 +274,33 @@ namespace Extract.Data.SaveIntoDatabase
         /// <summary>
         /// Function to insert the data from the DataTables into the database
         /// </summary>
-        private static void InsertDataIntoDatabase()
+        private static async Task InsertDataIntoDatabaseAsync()
+        {
+            LogInformation("Inserting data into the CompanyData");
+            var companyTask = MergeDataTableIntoDatabaseAsync(_companyTable, "CompanyData", true);
+
+            LogInformation("Inserting data into the BusinessData");
+            var businessTask = MergeDataTableIntoDatabaseAsync(_businessTable, "BusinessData");
+
+            LogInformation("Inserting data into the ServiceData");
+            var serviceTask = MergeDataTableIntoDatabaseAsync(_serviceTable, "ServiceData");
+
+            LogInformation("Inserting data into the ValueData");
+            var valueTask = MergeDataTableIntoDatabaseAsync(_valueTable, "ValueData");
+
+            await Task.WhenAll(companyTask, businessTask, serviceTask, valueTask);
+
+            LogInformation("Finished inserting data into the database");
+        }
+
+        /// <summary>
+        /// Function to execute a merge into statement in SQL for the data inside the created DataTables - CompanyTable, BusinessTable, ServiceTable, ValueTable
+        /// </summary>
+        /// <param name="connection">The connection to the database</param>
+        /// <param name="transaction">The transaction to be used so that any errors can be rolled back</param>
+        /// <param name="dataTable">The current DataTable that is being used to save the data into the database</param>
+        /// <param name="tableName">The name of the table in the database where the data will be saved</param>
+        private static async Task MergeDataTableIntoDatabaseAsync(DataTable dataTable, string tableName, bool hasLegalForm = false)
         {
             SqlConnectionStringBuilder connectionStringBuilder = new()
             {
@@ -274,106 +311,196 @@ namespace Extract.Data.SaveIntoDatabase
             };
 
             using SqlConnection connection = new(connectionStringBuilder.ConnectionString);
-            connection.Open();
+            await connection.OpenAsync();
 
-            using SqlTransaction transaction = connection.BeginTransaction();
+            using SqlTransaction transaction = (SqlTransaction)await connection.BeginTransactionAsync();
             try
             {
-                MergeDataTableIntoDatabase(connection, transaction, _companyTable, "CompanyTable", true);
-                MergeDataTableIntoDatabase(connection, transaction, _businessTable, "BusinessTable");
-                MergeDataTableIntoDatabase(connection, transaction, _serviceTable, "ServiceTable");
-                MergeDataTableIntoDatabase(connection, transaction, _valueTable, "ValueTable");
+                const int batchSize = 500;
+                int totalRows = dataTable.Rows.Count;
+                int processedRows = 0;
 
-                transaction.Commit();
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Function to execute a merge into statement in SQL for the data inside the created DataTables - CompanyTable, BusinessTable, ServiceTable, ValueTable
-        /// </summary>
-        /// <param name="connection">The connection to the database</param>
-        /// <param name="transaction">The transaction to be used so that any errors can be rolled back</param>
-        /// <param name="dataTable">The current DataTable that is being used to save the data into the database</param>
-        /// <param name="tableName">The name of the table in the database where the data will be saved</param>
-        private static void MergeDataTableIntoDatabase(SqlConnection connection, SqlTransaction transaction, DataTable dataTable, string tableName, bool hasLegalForm = false)
-        {
-            if (!hasLegalForm)
-            {
-                foreach (DataRow row in dataTable.Rows)
+                while (processedRows < totalRows)
                 {
-                    string mergeSql = $@"
+                    DataTable batchTable = dataTable.Clone();
+                    for (int i = processedRows; i < processedRows + batchSize && i < totalRows; i++)
+                    {
+                        batchTable.ImportRow(dataTable.Rows[i]);
+                    }
+
+                    string tempTableName = $"#Temp{tableName}";
+                    await CreateTemporaryTableAsync(connection, transaction, batchTable, tempTableName);
+
+                    string mergeSql = tableName switch
+                    {
+                        "CompanyData" => $@"
                     MERGE INTO {tableName} AS target
-                    USING (VALUES (@Year, @NumberOfCompanies, @EconomicActivityCode, @EconomicActivityDescription, @GeographicAreaCode, @GeographicAreaDescription, @ConvSignal, @ConvSignalDescription)) AS source
-                    (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
-                    ON target.Year = source.Year AND target.EconomicActivityCode = source.EconomicActivityCode AND target.GeographicAreaCode = source.GeographicAreaCode
+                    USING {tempTableName} AS source
+                    ON target.Year = source.Year
+                    AND target.EconomicActivityCode = source.EconomicActivityCode
+                    AND target.GeographicAreaCode = source.GeographicAreaCode
+                    AND target.LegalFormCode = source.LegalFormCode
                     WHEN MATCHED THEN
                         UPDATE SET
                             NumberOfCompanies = source.NumberOfCompanies,
                             EconomicActivityDescription = source.EconomicActivityDescription,
                             GeographicAreaDescription = source.GeographicAreaDescription,
-                            ConvSignal = source.ConvSignal,
-                            ConvSignalDescription = source.ConvSignalDescription
-                    WHEN NOT MATCHED THEN
-                        INSERT (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
-                        VALUES (source.Year, source.NumberOfCompanies, source.EconomicActivityCode, source.EconomicActivityDescription, source.GeographicAreaCode, source.GeographicAreaDescription, source.ConvSignal, source.ConvSignalDescription);";
-
-                    using SqlCommand command = new(mergeSql, connection, transaction);
-
-                    command.Parameters.AddWithValue("@Year", row["Year"]);
-                    command.Parameters.AddWithValue("@NumberOfCompanies", row["NumberOfCompanies"]);
-                    command.Parameters.AddWithValue("@EconomicActivityCode", row["EconomicActivityCode"]);
-                    command.Parameters.AddWithValue("@EconomicActivityDescription", row["EconomicActivityDescription"]);
-                    command.Parameters.AddWithValue("@GeographicAreaCode", row["GeographicAreaCode"]);
-                    command.Parameters.AddWithValue("@GeographicAreaDescription", row["GeographicAreaDescription"]);
-                    command.Parameters.AddWithValue("@ConvSignal", row["ConvSignal"]);
-                    command.Parameters.AddWithValue("@ConvSignalDescription", row["ConvSignalDescription"]);
-
-                    command.ExecuteNonQuery();
-                }
-            }
-            else
-            {
-                foreach (DataRow row in dataTable.Rows)
-                {
-                    string mergeSql = $@"
-                    MERGE INTO {tableName} AS target
-                    USING (VALUES (@Year, @NumberOfCompanies, @EconomicActivityCode, @EconomicActivityDescription, @GeographicAreaCode, @GeographicAreaDescription, @LegalFormCode, @LegalFormDescription @ConvSignal, @ConvSignalDescription)) AS source
-                    (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, LegalFormCode, LegalFormDescription, ConvSignal, ConvSignalDescription)
-                    ON target.Year = source.Year AND target.EconomicActivityCode = source.EconomicActivityCode AND target.GeographicAreaCode = source.GeographicAreaCode AND target.LegalFormCode = source.LegalFormCode
-                    WHEN MATCHED THEN
-                        UPDATE SET
-                            NumberOfCompanies = source.NumberOfCompanies,
-                            EconomicActivityDescription = source.EconomicActivityDescription,
-                            GeographicAreaDescription = source.GeographicAreaDescription,
-                            LegalFormCode = source.LegalFormCode,
                             LegalFormDescription = source.LegalFormDescription,
                             ConvSignal = source.ConvSignal,
                             ConvSignalDescription = source.ConvSignalDescription
                     WHEN NOT MATCHED THEN
-                        INSERT (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode, GeographicAreaDescription, LegalFormCode, LegalFormDescription, ConvSignal, ConvSignalDescription)
-                        VALUES (source.Year, source.NumberOfCompanies, source.EconomicActivityCode, source.EconomicActivityDescription, source.GeographicAreaCode, source.GeographicAreaDescription, source.LegalFormCode, source.LegalFormDescription, source.ConvSignal, source.ConvSignalDescription);";
+                        INSERT (Year, NumberOfCompanies, EconomicActivityCode, EconomicActivityDescription, GeographicAreaCode,
+                                GeographicAreaDescription, LegalFormCode, LegalFormDescription, ConvSignal, ConvSignalDescription)
+                        VALUES (source.Year, source.NumberOfCompanies, source.EconomicActivityCode, source.EconomicActivityDescription,
+                                source.GeographicAreaCode, source.GeographicAreaDescription, source.LegalFormCode, source.LegalFormDescription,
+                                source.ConvSignal, source.ConvSignalDescription);",
 
-                    using SqlCommand command = new(mergeSql, connection, transaction);
+                        "BusinessData" => $@"
+                    MERGE INTO {tableName} AS target
+                    USING {tempTableName} AS source
+                    ON target.Year = source.Year
+                    AND target.EconomicActivityCode = source.EconomicActivityCode
+                    AND target.GeographicAreaCode = source.GeographicAreaCode
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            NumberOfVolumeOfBusinessForCompanies = source.NumberOfVolumeOfBusinessForCompanies,
+                            EconomicActivityDescription = source.EconomicActivityDescription,
+                            GeographicAreaDescription = source.GeographicAreaDescription,
+                            ConvSignal = source.ConvSignal,
+                            ConvSignalDescription = source.ConvSignalDescription
+                    WHEN NOT MATCHED THEN
+                        INSERT (Year, NumberOfVolumeOfBusinessForCompanies, EconomicActivityCode, EconomicActivityDescription,
+                                GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
+                        VALUES (source.Year, source.NumberOfVolumeOfBusinessForCompanies, source.EconomicActivityCode, source.EconomicActivityDescription,
+                                source.GeographicAreaCode, source.GeographicAreaDescription, source.ConvSignal, source.ConvSignalDescription);",
 
-                    command.Parameters.AddWithValue("@Year", row["Year"]);
-                    command.Parameters.AddWithValue("@NumberOfCompanies", row["NumberOfCompanies"]);
-                    command.Parameters.AddWithValue("@EconomicActivityCode", row["EconomicActivityCode"]);
-                    command.Parameters.AddWithValue("@EconomicActivityDescription", row["EconomicActivityDescription"]);
-                    command.Parameters.AddWithValue("@GeographicAreaCode", row["GeographicAreaCode"]);
-                    command.Parameters.AddWithValue("@GeographicAreaDescription", row["GeographicAreaDescription"]);
-                    command.Parameters.AddWithValue("@LegalFormCode", row["LegalFormCode"]);
-                    command.Parameters.AddWithValue("@LegalFormDescription", row["LegalFormDescription"]);
-                    command.Parameters.AddWithValue("@ConvSignal", row["ConvSignal"]);
-                    command.Parameters.AddWithValue("@ConvSignalDescription", row["ConvSignalDescription"]);
+                        "ServiceData" => $@"
+                    MERGE INTO {tableName} AS target
+                    USING {tempTableName} AS source
+                    ON target.Year = source.Year
+                    AND target.EconomicActivityCode = source.EconomicActivityCode
+                    AND target.GeographicAreaCode = source.GeographicAreaCode
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            NumberOfPeopleWorkingForCompanies = source.NumberOfPeopleWorkingForCompanies,
+                            EconomicActivityDescription = source.EconomicActivityDescription,
+                            GeographicAreaDescription = source.GeographicAreaDescription,
+                            ConvSignal = source.ConvSignal,
+                            ConvSignalDescription = source.ConvSignalDescription
+                    WHEN NOT MATCHED THEN
+                        INSERT (Year, NumberOfPeopleWorkingForCompanies, EconomicActivityCode, EconomicActivityDescription,
+                                GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
+                        VALUES (source.Year, source.NumberOfPeopleWorkingForCompanies, source.EconomicActivityCode, source.EconomicActivityDescription,
+                                source.GeographicAreaCode, source.GeographicAreaDescription, source.ConvSignal, source.ConvSignalDescription);",
 
-                    command.ExecuteNonQuery();
+                        "ValueData" => $@"
+                    MERGE INTO {tableName} AS target
+                    USING {tempTableName} AS source
+                    ON target.Year = source.Year
+                    AND target.EconomicActivityCode = source.EconomicActivityCode
+                    AND target.GeographicAreaCode = source.GeographicAreaCode
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            IncreasedValueForCompanies = source.IncreasedValueForCompanies,
+                            EconomicActivityDescription = source.EconomicActivityDescription,
+                            GeographicAreaDescription = source.GeographicAreaDescription,
+                            ConvSignal = source.ConvSignal,
+                            ConvSignalDescription = source.ConvSignalDescription
+                    WHEN NOT MATCHED THEN
+                        INSERT (Year, IncreasedValueForCompanies, EconomicActivityCode, EconomicActivityDescription,
+                                GeographicAreaCode, GeographicAreaDescription, ConvSignal, ConvSignalDescription)
+                        VALUES (source.Year, source.IncreasedValueForCompanies, source.EconomicActivityCode, source.EconomicActivityDescription,
+                                source.GeographicAreaCode, source.GeographicAreaDescription, source.ConvSignal, source.ConvSignalDescription);",
+
+                        _ => throw new InvalidOperationException($"Unsupported table name: {tableName}")
+                    };
+
+                    using SqlCommand command = new(mergeSql, connection, transaction)
+                    {
+                        CommandTimeout = 300
+                    };
+                    await command.ExecuteNonQueryAsync();
+
+                    await DropTemporaryTableAsync(connection, transaction, tempTableName);
+
+                    processedRows += batchSize;
                 }
+
+                await transaction.CommitAsync();
             }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error in {tableName}: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// Create a temporary table in the database and insert the data from the DataTable into the temporary table
+        /// </summary>
+        /// <param name="connection">The connection to the database</param>
+        /// <param name="transaction">The current transaction that is being used</param>
+        /// <param name="dataTable">The current DataTable that is being used to save the data before it is inserted into the database</param>
+        /// <param name="tempTableName">The name of the temporary table that will be created</param>
+        /// <returns>Nothing important - Only used to wait for the task to finish</returns>
+        private static async Task CreateTemporaryTableAsync(SqlConnection connection, SqlTransaction transaction, DataTable dataTable, string tempTableName)
+        {
+            string createTableSql = $"CREATE TABLE {tempTableName} (";
+            foreach (DataColumn column in dataTable.Columns)
+            {
+                createTableSql += $"[{column.ColumnName}] {GetSqlDataType(column.DataType)},";
+            }
+            createTableSql = createTableSql.TrimEnd(',') + ");";
+
+            using SqlCommand createTableCommand = new(createTableSql, connection, transaction);
+            await createTableCommand.ExecuteNonQueryAsync();
+
+            using SqlBulkCopy bulkCopy = new(connection, SqlBulkCopyOptions.Default, transaction)
+            {
+                DestinationTableName = tempTableName
+            };
+
+            foreach (DataColumn column in dataTable.Columns)
+            {
+                bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+            }
+
+            await bulkCopy.WriteToServerAsync(dataTable);
+        }
+
+        /// <summary>
+        /// Drop the temporary table after the data has been inserted into the database
+        /// </summary>
+        /// <param name="connection">The connection to the database</param>
+        /// <param name="transaction">The current transaction that is being used</param>
+        /// <param name="tempTableName">The name of the temporary table that needs to be dropped</param>
+        /// <returns>No return value - Only used to wait for the task to finish</returns>
+        private static async Task DropTemporaryTableAsync(SqlConnection connection, SqlTransaction transaction, string tempTableName)
+        {
+            string dropTableSql = $"DROP TABLE {tempTableName};";
+            using SqlCommand dropTableCommand = new(dropTableSql, connection, transaction);
+            await dropTableCommand.ExecuteNonQueryAsync();
+        }
+
+        private static string GetSqlDataType(Type type)
+        {
+            return type switch
+            {
+                _ when type == typeof(int) => "INT",
+                _ when type == typeof(decimal) => "DECIMAL(18, 2)",
+                _ when type == typeof(string) => "NVARCHAR(MAX)",
+                _ => throw new NotSupportedException($"Type {type} is not supported")
+            };
+        }
+
+        /// <summary>
+        /// Log information message
+        /// </summary>
+        /// <param name="message">The message to be logged into the console when this method is called</param>
+        private static void LogInformation(string message)
+        {
+            var logMessage = $"[{DateTime.Now:dd-MM-yyyy HH:mm:ss}] {message}";
+            Console.WriteLine(logMessage);
         }
     }
 }
