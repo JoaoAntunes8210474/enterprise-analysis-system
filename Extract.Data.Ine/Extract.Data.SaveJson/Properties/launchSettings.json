@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Extract.Data.SaveJson": {
+      "commandName": "Project",
+      "commandLineArgs": "2022"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 {
     public class SuccessDto
     {
-        public List<SuccessMessageDto> Verdadeiro { get; set; } = [];
-        public List<ErrorMessageDto> Falso { get; set; } = [];
+        public List<SuccessMessageDto>? Verdadeiro { get; set; } = [];
+        public List<ErrorMessageDto>? Falso { get; set; } = [];
     }
 }

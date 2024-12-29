@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Extract.Data.SaveIntoDatabase": {
+      "commandName": "Project",
+      "commandLineArgs": "2022 2022"
+    }
+  }
+}
