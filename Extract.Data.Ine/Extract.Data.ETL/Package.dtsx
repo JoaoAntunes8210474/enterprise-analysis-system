@@ -11,8 +11,8 @@
   DTS:LocaleID="2070"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="123"
-  DTS:VersionGUID="{BFD7DDB0-CCF7-46D2-91B3-DEF105E8D038}">
+  DTS:VersionBuild="125"
+  DTS:VersionGUID="{FD670CFD-C95D-4C40-9989-B00DDABC6F90}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -2339,6 +2339,12 @@ GROUP BY Year</property>
                           cachedName="Volume"
                           externalMetadataColumnId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[BusinessVolume]"
                           lineageId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].Columns[Volume]" />
+                        <inputColumn
+                          refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[VAB]"
+                          cachedDataType="i4"
+                          cachedName="VAB"
+                          externalMetadataColumnId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[VAB]"
+                          lineageId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].Columns[VAB]" />
                       </inputColumns>
                       <externalMetadataColumns
                         isUsed="True">
@@ -2364,6 +2370,10 @@ GROUP BY Year</property>
                           refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[BusinessVolume]"
                           dataType="i4"
                           name="BusinessVolume" />
+                        <externalMetadataColumn
+                          refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[VAB]"
+                          dataType="i4"
+                          name="VAB" />
                       </externalMetadataColumns>
                     </input>
                   </inputs>
@@ -2418,19 +2428,27 @@ GROUP BY Year</property>
                       description="The SQL command to be executed."
                       name="SqlCommand"
                       UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
-    BusinessData.Year,
-    BusinessData.EconomicActivityCode, 
-    BusinessData.GeographicAreaCode,
-    BusinessData.NumberOfVolumeOfBusinessForCompanies AS Volume
+    bd.Year,
+    bd.EconomicActivityCode,
+    bd.GeographicAreaCode,
+    bd.NumberOfVolumeOfBusinessForCompanies AS Volume,
+    vd.IncreasedValueForCompanies AS VAB
 FROM
-    BusinessData
+    BusinessData bd
 INNER JOIN
-    Dimensional.Time ON BusinessData.Year = Dimensional.Time.Year
+    ValueData vd
+    ON bd.Year = vd.Year
+    AND bd.EconomicActivityCode = vd.EconomicActivityCode
+    AND bd.GeographicAreaCode = vd.GeographicAreaCode
 INNER JOIN
-    
-    Dimensional.Region ON BusinessData.GeographicAreaCode = Dimensional.Region.GeographicAreaCode
+    Dimensional.Time dt
+    ON bd.Year = dt.Year
 INNER JOIN
-    Dimensional.EconomicActivity ON BusinessData.EconomicActivityCode = Dimensional.EconomicActivity.EconomicActivityCode;</property>
+    Dimensional.Region dr
+    ON bd.GeographicAreaCode = dr.GeographicAreaCode
+INNER JOIN
+    Dimensional.EconomicActivity de
+    ON bd.EconomicActivityCode = de.EconomicActivityCode;</property>
                     <property
                       dataType="System.String"
                       description="The variable that contains the SQL command to be executed."
@@ -2504,6 +2522,15 @@ INNER JOIN
                           lineageId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].Columns[GeographicAreaCode]"
                           name="GeographicAreaCode"
                           truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].Columns[VAB]"
+                          dataType="i4"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].ExternalColumns[VAB]"
+                          lineageId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].Columns[VAB]"
+                          name="VAB"
+                          truncationRowDisposition="FailComponent" />
                       </outputColumns>
                       <externalMetadataColumns
                         isUsed="True">
@@ -2525,6 +2552,10 @@ INNER JOIN
                           dataType="wstr"
                           length="10"
                           name="GeographicAreaCode" />
+                        <externalMetadataColumn
+                          refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Output].ExternalColumns[VAB]"
+                          dataType="i4"
+                          name="VAB" />
                       </externalMetadataColumns>
                     </output>
                     <output
@@ -2554,6 +2585,11 @@ INNER JOIN
                           dataType="i4"
                           lineageId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[Volume]"
                           name="Volume" />
+                        <outputColumn
+                          refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[VAB]"
+                          dataType="i4"
+                          lineageId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[VAB]"
+                          name="VAB" />
                         <outputColumn
                           refId="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[ErrorCode]"
                           dataType="i4"
@@ -3041,15 +3077,6 @@ INNER JOIN
               Language="CSharp"
               ReadWriteVariables="User::PackagePath">
               <ProjectItem
-                Name="Properties\Settings.settings"
-                Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
-<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
-</SettingsFile>]]></ProjectItem>
-              <ProjectItem
                 Name="Properties\Resources.resx"
                 Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
 <root>
@@ -3255,6 +3282,35 @@ INNER JOIN
   </ProjectExtensions>
 </Project>]]></ProjectItem>
               <ProjectItem
+                Name="Properties\Settings.Designer.cs"
+                Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_f10158dcb3394e469e943a8d147c8796.Properties.Settings.get_Default():ST_f10158dcb3394e469e943a8d147c8796.Properties.Sett" +
+    "ings")]
+
+namespace ST_f10158dcb3394e469e943a8d147c8796.Properties {
+    
+    
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+        
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+        
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
+              <ProjectItem
                 Name="ScriptMain.cs"
                 Encoding="UTF8"><![CDATA[using System;
 using System.IO;
@@ -3371,35 +3427,6 @@ public class ScriptMain : Microsoft.SqlServer.Dts.Tasks.ScriptTask.VSTARTScriptO
   </msb:ItemGroup>
 </c:Project>]]></ProjectItem>
               <ProjectItem
-                Name="Properties\Settings.Designer.cs"
-                Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
-// <auto-generated>
-//     This code was generated by a tool.
-//
-//     Changes to this file may cause incorrect behavior and will be lost if
-//     the code is regenerated.
-// </auto-generated>
-//------------------------------------------------------------------------------
-
-[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_f10158dcb3394e469e943a8d147c8796.Properties.Settings.get_Default():ST_f10158dcb3394e469e943a8d147c8796.Properties.Sett" +
-    "ings")]
-
-namespace ST_f10158dcb3394e469e943a8d147c8796.Properties {
-    
-    
-    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
-        
-        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-        private static Settings defaultInstance = new Settings();
-        
-        public static Settings Default {
-            get {
-                return defaultInstance;
-            }
-        }
-    }
-}]]></ProjectItem>
-              <ProjectItem
                 Name="Properties\AssemblyInfo.cs"
                 Encoding="UTF8"><![CDATA[using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -3429,6 +3456,15 @@ using System.Runtime.CompilerServices;
 // by using the '*' as shown below:
 
 [assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
+              <ProjectItem
+                Name="Properties\Settings.settings"
+                Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></ProjectItem>
               <ProjectItem
                 Name="Properties\Resources.Designer.cs"
                 Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
@@ -4477,7 +4513,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</BinaryItem>
     design-time-name="Package\load fact tables\Load_Fact_BusinessVolume">
     <LayoutInfo>
       <GraphLayout
-        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
         <NodeLayout
           Size="177,42"
           Id="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Destination"
@@ -4485,29 +4521,27 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</BinaryItem>
         <NodeLayout
           Size="157,42"
           Id="Package\load fact tables\Load_Fact_BusinessVolume\OLE DB Source"
-          TopLeft="88,127" />
+          TopLeft="88,128" />
         <EdgeLayout
           Id="Package\load fact tables\Load_Fact_BusinessVolume.Paths[OLE DB Source Output]"
-          TopLeft="165.5,169">
+          TopLeft="165.5,170">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="0,126"
+              EndConnector="0,125"
               Start="0,0"
-              End="0,118.5">
+              End="0,117.5">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,118.5" />
+                    End="0,117.5" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
           </EdgeLayout.Curve>
           <EdgeLayout.Labels>
-            <mssgm:EdgeLabel
-              BoundingBox="0,0,0,0"
-              RelativePosition="Any" />
+            <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
       </GraphLayout>
